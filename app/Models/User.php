@@ -19,6 +19,8 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $guarded = ['id'];
+    protected $table = 'ms_users';
+
 
     public function scopeSearch($query, $search)
     {
@@ -29,6 +31,11 @@ class User extends Authenticatable
     public function regency(): BelongsTo
     {
         return $this->belongsTo(Regency::class);
+    }
+
+    public function day(): BelongsTo
+    {
+        return $this->belongsTo(Day::class);
     }
 
     /**

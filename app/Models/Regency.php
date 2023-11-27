@@ -10,6 +10,7 @@ class Regency extends Model
 {
     use HasFactory;
     protected $guarded = ['id'];
+    protected $table = 'ms_regencies';
 
     public function scopeSearch($query, $search)
     {

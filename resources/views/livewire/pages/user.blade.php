@@ -9,7 +9,7 @@ new class extends Component
 
     public $search;
     public $idUser;
-    public $email, $password, $name, $street, $phone, $regency_id, $notes, $subscriber;
+    public $email, $password, $name, $street, $phone, $regency_id, $notes, $subscriber, $day_id;
     public $editForm = false;
     public $titleForm;
 
@@ -32,10 +32,11 @@ new class extends Component
             'email'      => 'required|unique:users,email',
             'password'   => 'required|min:3',
             'street'     => 'nullable',
-            'phone'     => 'nullable',
+            'phone'      => 'nullable',
             'regency_id' => 'required',
-            'notes'     => 'nullable',
-            'subscriber'     => 'nullable',
+            'notes'      => 'nullable',
+            'subscriber' => 'nullable',
+            'day_id'     => 'required',
 
         ]);
         $user = \App\Models\User::create($validatedData);
@@ -56,14 +57,30 @@ new class extends Component
         $this->email = $this->user->email;
         $this->phone = $this->user->phone;
         $this->street = $this->user->street;
+        $this->regency_id = $this->user->regency_id;
         $this->notes = $this->user->notes;
+        $this->subscriber = $this->user->subscriber;
+        $this->day_id = $this->user->day_id;
     }
     public function update()
     {
         $validatedData = $this->validate([
-           'name'       => 'required',
-           'email'      => 'required',
+            'name'       => 'required|min:3',
+            'email'      => 'required',
+            'password'   => 'nullable',
+            'street'     => 'nullable',
+            'phone'      => 'nullable',
+            'notes'      => 'nullable',
+            'subscriber' => 'nullable',
+            'day_id'     => 'required',
         ]);
+        if($this->regency_id){
+            $validatedData['regency_id'] = $this->regency_id;
+        }else {
+            unset($validatedData['regency_id']);
+        }
+
+
         if ($this->password){
             $validatedData['password'] = Hash::make($this->password);
         }else{
@@ -71,6 +88,7 @@ new class extends Component
         }
         $user = \App\Models\User::where('id', $this->idUser)->first();
         $user->update($validatedData);
+        $this->reset();
         $this->alert('success', 'User edited successfully');
         $this->dispatch('close-modal');
 
@@ -169,6 +187,7 @@ new class extends Component
                             <th scope="col" class="px-4 py-3">Address & Phone</th>
                             <th scope="col" class="px-4 py-3">Notes</th>
                             <th scope="col" class="px-4 py-3">is Subscriber?</th>
+                            <th scope="col" class="px-4 py-3">Send at</th>
                             <th scope="col" class="px-4 py-3">Update at</th>
                             <th scope="col" class="px-4 py-3">
                                 <span class="sr-only">Actions</span>
@@ -186,6 +205,7 @@ new class extends Component
                                     <p>Telp : {{ $user->phone }}</p></td>
                                 <td class="align-top px-4 py-3">{{ $user->notes }}</td>
                                 <td class="align-top text-center font-bold px-4 py-3">{{ ($user->subscriber == '1') ? '√' : ''}}</td>
+                                <td class="align-top text-center px-4 py-3">{{ $user->name }}</td>
                                 <td class="align-top px-4 py-3">{{ $user->updated_at->format('d-m-Y H:i:s') }}</td>
                                 <td class="align-top px-4 py-3 flex items-center justify-end">
                                     <button
@@ -236,7 +256,6 @@ new class extends Component
         </div>
     </section>
     <x-modal.user :editForm="$editForm"
-                      :regencies="$regencies"
                   :titleForm="$titleForm"/>
 
 </div>

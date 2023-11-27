@@ -9,6 +9,7 @@ class Flower extends Model
 {
     use HasFactory;
     protected $guarded = ['id'];
+    protected $table = 'ms_flowers';
 
     public function scopeSearch($query, $search)
     {

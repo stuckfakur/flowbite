@@ -1,4 +1,4 @@
-@props(['editForm', 'titleForm', 'regencies','regency'])
+@props(['editForm', 'titleForm', 'getUserId'])
 <div>
     <div
         x-data="{ show : false }"
@@ -11,17 +11,18 @@
         {{--    Blank   --}}
         <div class="fixed inset-0 bg-gray-300 opacity-40"></div>
         {{--    Form    --}}
-        <div class="bg-white rounded-lg m-auto fixed inset-0 max-w-2xl max-h-80 mb-96 mt-12">
+        <div class="bg-white rounded-lg m-auto fixed inset-0 max-w-2xl max-h-80 mb-96 mt-6">
             <div class="relative overflow-y-scroll w-full max-w-2xl">
                 <form wire:submit.prevent="{{ $editForm ? 'update' : 'store' }}"
                       class="relative bg-white rounded-lg shadow dark:bg-gray-700">
-                    <div class="flex items-start justify-between p-4 border-b rounded-t dark:border-gray-600">
+                    <div class="flex items-start justify-between p-2 border-b rounded-t dark:border-gray-600">
                         <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
                             {{ $titleForm ?? 'Create User' }}
                         </h3>
-                        <button wire:click="$dispatch('close-modal')" type="button"
-                                class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
-                                data-modal-hide="editUserModal">
+                        <button wire:click="close"
+                                @click="$dispatch('close-modal')"
+                                type="button"
+                                class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
                             <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
                                  viewBox="0 0 14 14">
                                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
@@ -30,8 +31,8 @@
                             <span class="sr-only">Close modal</span>
                         </button>
                     </div>
-                    <div class="p-6 space-y-6">
-                        <div class="bg-white shadow-lg rounded-lg p-4">
+                    <div class="p-4 space-y-6">
+                        <div class="bg-white shadow-lg rounded-lg p-2">
                             <div class="grid grid-cols-6 gap-6">
                                 <div class="col-span-6 sm:col-span-3"
                                      x-data="{ label : 'email', placeholder: 'Type your '}">
@@ -105,7 +106,7 @@
                                             data-placeholder="Select a City"
                                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
                                         <option></option>
-                                        @foreach($regencies as $regency)
+                                        @foreach(\App\Models\Regency::orderBy('city')->get() as $regency)
                                             @php
                                                 $oldRegencyId = old('regency_id', ($this->idUser ? \App\Models\User::find($this->idUser)->regency_id : ''));
                                                 $isSelected = ($oldRegencyId == $regency->id);
@@ -118,7 +119,6 @@
 
                                     </select>
                                     <x-input-error :messages="$errors->get('regency_id')"/>
-
                                 </div>
                                 <div class="col-span-12 md:col-span-12 sm:col-span-6"
                                      x-data="{ label : 'notes', placeholder: 'Type your '}">
@@ -133,23 +133,63 @@
                                     </textarea>
                                     <x-input-error :messages="$errors->get('notes')"/>
                                 </div>
-                                <div
-                                    class="col-span-12 sm:col-span6 flex items-center ps-4 border border-gray-200 rounded dark:border-gray-700">
-                                    <input wire:model="subscriber" id="bordered-checkbox-1" type="checkbox" value="true"
-                                           name="bordered-checkbox"
-                                           class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
-                                    <label for="bordered-checkbox-1"
-                                           class="w-full py-4 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">is
-                                        Subscriber?</label>
+                            </div>
+                        </div>
+                        <div class="bg-white shadow-lg rounded-lg p-4">
+                            <div class="grid grid-cols-12 gap-6"
+                                 x-data = "{ show : false }"
+                                 x-on:open-formDay.window = " show = true "
+                                 x-on:close-formDay.window = " show = false ">
+                                <div class="flex items-end col-span-6 md:col-span-6 sm:col-span-3">
+                                            <span class="flex items-end">
+                                            <input wire:model="subscriber" @click="show = $event.target.checked; if(!$event.target.checked) { $wire.day_id = 0 }" id="bordered-checkbox-1" type="checkbox"
+                                                   value="true"
+                                                   name="bordered-checkbox"
+                                                   class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                                            <label for="bordered-checkbox-1"
+                                                   class="w-full ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">is
+                                                Subscriber?</label>
+                                            </span>
+                                </div>
+                                <div class="col-span-6 md:col-span-6 sm:col-span-3"
+                                     id="formDay"
+                                     x-data="{ label : 'day', placeholder: 'Type your '}"
+                                     x-show="show"
+                                     style="display: none;">
+
+                                    <label for="day"
+                                           x-text="label.charAt(0).toUpperCase() + label.slice(1)"
+                                           class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                                    </label>
+                                    <select wire:model="day_id"
+                                            id="day"
+                                            data-placeholder="Select a City"
+                                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                                        <option value="0" disabled>Select Day Subscribe</option>
+                                        @foreach(\App\Models\Day::whereBetween('id', [1,7])->get() as $day)
+                                            @php
+                                            if ($editForm){
+                                                $oldDayId = old('day_id', ($this->idUser ? \App\Models\User::find($this->idUser)->day_id : ''));
+                                                $isSelected = ($oldDayId == $day->id);
+                                            }
+                                            @endphp
+
+                                            <option
+                                                value="{{ $day->id }}" {{ $isSelected ? 'selected' : '' }}>
+                                                {{ $day->name }}
+                                            </option>
+                                        @endforeach
+
+                                    </select>
+                                    <x-input-error :messages="$errors->get('day_id')"/>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-
                     <div
                         class="flex items-center p-6 space-x-3 rtl:space-x-reverse border-t border-gray-200 rounded-b dark:border-gray-600">
                         <button type="submit"
+                                @click="$dispatch('close-formDay')"
                                 class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
                             @if($editForm)
                                 Save
@@ -179,8 +219,7 @@
         <div class="fixed inset-0 m-auto p-4 w-full max-w-md max-h-full">
             <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
                 <button @click="$dispatch('close-modal')" type="button"
-                        class="absolute top-3 end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
-                        data-modal-hide="popup-modal">
+                        class="absolute top-3 end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
                     <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
                          viewBox="0 0 14 14">
                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

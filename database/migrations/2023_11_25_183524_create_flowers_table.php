@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('flowers', function (Blueprint $table) {
+        Schema::create('ms_flowers', function (Blueprint $table) {
             $table->id();
             $table->string('code');
             $table->string('name');

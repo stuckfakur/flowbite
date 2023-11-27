@@ -55,6 +55,13 @@ class DaySeeder extends Seeder
            'end_date'   => '',
            'type'       => 'based'
         ]);
+        Day::create([
+           'name'       => '-',
+           'start_date' => '',
+           'end_date'   => '',
+           'type'       => 'based'
+        ]);
+
 
     }
 }

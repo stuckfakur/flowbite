@@ -27,6 +27,7 @@ class UserFactory extends Factory
             'regency_id' => fake()->numberBetween(1,10),
             'notes' => fake()->paragraph(1),
             'subscriber' => fake()->randomElement(['1', '0']),
+            'day_id' => '0',
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),

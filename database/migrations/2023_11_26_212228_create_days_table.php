@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('days', function (Blueprint $table) {
+        Schema::create('ms_days', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('start_date')->nullable();

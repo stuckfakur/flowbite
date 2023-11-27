@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Day;
+use Database\Factories\DayFactory;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -13,10 +15,13 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         \App\Models\User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+            'name' => 'Admin',
+            'email' => 'admin@brandingku.com',
         ]);
-        \App\Models\User::factory(41)->create();
+        \App\Models\Flower::factory(33)->create();
+        $this->call(DaySeeder::class);
+        \App\Models\Day::factory(23)->create();
+
 
     }
 }

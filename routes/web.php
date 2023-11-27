@@ -21,6 +21,9 @@ Route::middleware('auth', 'verified')->group(function (){
     Route::view('/profile', 'profile')->name('profile');
 
     Volt::route('/user', 'pages.user')->name('user.index');
+    Volt::route('/flower', 'pages.flower')->name('flower.index');
+    Volt::route('/regency', 'pages.regency')->name('regency.index');
+    Volt::route('/day', 'pages.day')->name('day.index');
 });
 
 require __DIR__.'/auth.php';

@@ -9,14 +9,15 @@ new class extends Component
 
     public $search;
     public $idUser;
-    public $name, $email, $password;
+    public $email, $password, $name, $street, $phone, $regency_id, $notes, $subscriber;
     public $editForm = false;
-    public $titleForm, $actionForm;
+    public $titleForm;
 
     public function with(): array
     {
         return [
-            'users' => \App\Models\User::search($this->search)->orderBy('updated_at', 'desc')->Paginate(10)
+            'users' => \App\Models\User::search($this->search)->orderBy('updated_at', 'desc')->Paginate(10),
+            'regencies' => \App\Models\Regency::orderBy('city', 'asc')->get()
         ];
     }
     public function getUserId($userId)
@@ -29,11 +30,19 @@ new class extends Component
         $validatedData = $this->validate([
             'name'       => 'required|min:3',
             'email'      => 'required|unique:users,email',
-            'password'   => 'required|min:3'
+            'password'   => 'required|min:3',
+            'street'     => 'nullable',
+            'phone'     => 'nullable',
+            'regency_id' => 'required',
+            'notes'     => 'nullable',
+            'subscriber'     => 'nullable',
+
         ]);
         $user = \App\Models\User::create($validatedData);
+        $this->reset();
         $this->alert('success', 'User created successfully');
-        $this->dispatch('hideModal');
+        $this->dispatch('crud-modal');
+        $this->dispatch('close-modal');
 
     }
 
@@ -45,13 +54,15 @@ new class extends Component
         $this->user = \App\Models\User::where('id', $this->idUser)->first();
         $this->name = $this->user->name;
         $this->email = $this->user->email;
+        $this->phone = $this->user->phone;
+        $this->street = $this->user->street;
+        $this->notes = $this->user->notes;
     }
     public function update()
     {
         $validatedData = $this->validate([
            'name'       => 'required',
-           'email'      => 'required|unique:users,email',
-           'password'   => 'min:3'
+           'email'      => 'required',
         ]);
         if ($this->password){
             $validatedData['password'] = Hash::make($this->password);
@@ -61,14 +72,16 @@ new class extends Component
         $user = \App\Models\User::where('id', $this->idUser)->first();
         $user->update($validatedData);
         $this->alert('success', 'User edited successfully');
+        $this->dispatch('close-modal');
+
     }
 
     public function delete()
     {
         $user = \App\Models\User::where('id', $this->idUser)->first();
         $user->delete();
-        $this->js('window.location.reload()');
         $this->alert('success', 'User deleted successfully');
+        $this->dispatch('close-modal');
     }
 
     public function close()
@@ -98,11 +111,11 @@ new class extends Component
                         </form>
                     </div>
                     <div class="w-full md:w-auto flex flex-col md:flex-row space-y-2 md:space-y-0 items-stretch md:items-center justify-end md:space-x-3 flex-shrink-0">
-                        <button type="button" data-modal-show="editUserModal" class="flex items-center justify-center text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-primary-600 dark:hover:bg-primary-700 focus:outline-none dark:focus:ring-primary-800">
+                        <button type="button" wire:click="$dispatch('opencreate-usermodal')" class="flex items-center justify-center text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-primary-600 dark:hover:bg-primary-700 focus:outline-none dark:focus:ring-primary-800">
                             <svg class="h-3.5 w-3.5 mr-2" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                 <path clip-rule="evenodd" fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" />
                             </svg>
-                            Add User
+                            Add Modal
                         </button>
                         <div class="flex items-center space-x-3 w-full md:w-auto">
                             <button id="actionsDropdownButton" data-dropdown-toggle="actionsDropdown" class="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700" type="button">
@@ -153,7 +166,9 @@ new class extends Component
                         <tr>
                             <th scope="col" class="px-4 py-3">No</th>
                             <th scope="col" class="px-4 py-3">Name</th>
-                            <th scope="col" class="px-4 py-3">Email</th>
+                            <th scope="col" class="px-4 py-3">Address & Phone</th>
+                            <th scope="col" class="px-4 py-3">Notes</th>
+                            <th scope="col" class="px-4 py-3">is Subscriber?</th>
                             <th scope="col" class="px-4 py-3">Update at</th>
                             <th scope="col" class="px-4 py-3">
                                 <span class="sr-only">Actions</span>
@@ -163,27 +178,49 @@ new class extends Component
                         <tbody>
                         @foreach($users as $user)
                             <tr class="border-b dark:border-gray-700 hover:bg-gray-200">
-                                <th scope="row" class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">{{ $loop->index + $users->firstItem() }}</th>
-                                <td class="px-4 py-3">{{ $user->name }}</td>
-                                <td class="px-4 py-3">{{ $user->email }}</td>
-                                <td class="px-4 py-3">{{ $user->updated_at->format('d-m-Y H:i:s') }}</td>
-                                <td class="px-4 py-3 flex items-center justify-end">
-                                    <button wire:click="getUserId({{ $user->id }})" id="{{ $user->id }}-button" data-dropdown-toggle="{{ $user->id }}" class="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100" type="button">
+                                <th scope="row" class="align-top px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">{{ $loop->index + $users->firstItem() }}</th>
+                                <td class="align-top px-4 py-3">{{ $user->name }}</td>
+                                <td class="align-top px-4 py-3">
+                                    <p>{{ $user->street }}</p>
+                                    <p><b>{{ $user->regency->name }}, {{ $user->regency->city }}</b></p>
+                                    <p>Telp : {{ $user->phone }}</p></td>
+                                <td class="align-top px-4 py-3">{{ $user->notes }}</td>
+                                <td class="align-top text-center font-bold px-4 py-3">{{ ($user->subscriber == '1') ? '√' : ''}}</td>
+                                <td class="align-top px-4 py-3">{{ $user->updated_at->format('d-m-Y H:i:s') }}</td>
+                                <td class="align-top px-4 py-3 flex items-center justify-end">
+                                    <button
+                                        wire:click="getUserId({{ $user->id }})"
+                                        @click="$dispatch('openaction-usermodal{{ $user->id }}')"
+                                        class="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
+                                        type="button">
                                         <svg class="w-5 h-5" aria-hidden="true" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                                             <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
                                         </svg>
                                     </button>
-                                    <div wire:ignore.self id="{{ $user->id }}" class="hidden z-10 w-44 bg-white rounded divide-y divide-gray-100 shadow dark:bg-gray-700 dark:divide-gray-600">
-                                        <ul class="py-1 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="{{ $user->id }}-button">
+                                    <div
+                                        x-data = "{ show : false }"
+                                        x-show = "show"
+                                        x-on:openaction-usermodal{{ $user->id }}.window = "show = true"
+                                        x-on:close-modal.window = "show = false"
+{{--                                        @mouseleave="show = false"--}}
+                                        @click.outside=" show = false"
+                                        x-transition
+                                        style="display:none;"
+                                        class="z-20 absolute w-44 bg-white rounded divide-y divide-gray-100 shadow dark:bg-gray-700 dark:divide-gray-600">
+                                        <ul class="py-1 text-sm text-gray-700 dark:text-gray-200" >
+
                                             <li>
-                                                <a href="#" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Show</a>
-                                            </li>
-                                            <li>
-                                                <a wire:click="edit" type="button" data-modal-show="editUserModal" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Edit</a>
+                                                <a wire:click="edit" @click="$dispatch('opencreate-usermodal')" type="button" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Edit</a>
                                             </li>
                                         </ul>
                                         <div class="py-1">
-                                            <a wire:click="delete" class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">Delete</a>
+                                            <a
+                                                @click="$dispatch('opendelete-usermodal')"
+                                                class="block py-2 px-4 bg-red-600 text-white hover:bg-red-800 dark:hover:bg-red-800 dark:hover:text-white"
+                                                type="button">
+                                                Delete
+                                            </a>
+
                                         </div>
                                     </div>
                                 </td>
@@ -198,8 +235,8 @@ new class extends Component
             </div>
         </div>
     </section>
-    <x-page.user.create-edit :edit-form="$editForm"
-                             :action-form="$actionForm"
-                             :title-form="$titleForm"/>
+    <x-modal.user :editForm="$editForm"
+                      :regencies="$regencies"
+                  :titleForm="$titleForm"/>
 
 </div>

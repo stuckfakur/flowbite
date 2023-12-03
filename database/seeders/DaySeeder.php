@@ -15,50 +15,50 @@ class DaySeeder extends Seeder
     {
         Day::create([
            'name'       => 'Senin',
-           'start_date' => '',
-           'end_date'   => '',
+           'start_date' => '2023-01-01',
+           'end_date'   => '2023-01-01',
            'type'       => 'based'
         ]);
         Day::create([
            'name'       => 'Selasa',
-           'start_date' => '',
-           'end_date'   => '',
+           'start_date' => '2023-01-01',
+           'end_date'   => '2023-01-01',
            'type'       => 'based'
         ]);
         Day::create([
            'name'       => 'Rabu',
-           'start_date' => '',
-           'end_date'   => '',
+           'start_date' => '2023-01-01',
+           'end_date'   => '2023-01-01',
            'type'       => 'based'
         ]);
         Day::create([
            'name'       => 'Kamis',
-           'start_date' => '',
-           'end_date'   => '',
+           'start_date' => '2023-01-01',
+           'end_date'   => '2023-01-01',
            'type'       => 'based'
         ]);
         Day::create([
            'name'       => 'Jumat',
-           'start_date' => '',
-           'end_date'   => '',
+           'start_date' => '2023-01-01',
+           'end_date'   => '2023-01-01',
            'type'       => 'based'
         ]);
         Day::create([
            'name'       => 'Sabtu',
-           'start_date' => '',
-           'end_date'   => '',
+           'start_date' => '2023-01-01',
+           'end_date'   => '2023-01-01',
            'type'       => 'based'
         ]);
         Day::create([
            'name'       => 'Minggu',
-           'start_date' => '',
-           'end_date'   => '',
+           'start_date' => '2023-01-01',
+           'end_date'   => '2023-01-01',
            'type'       => 'based'
         ]);
         Day::create([
            'name'       => '-',
-           'start_date' => '',
-           'end_date'   => '',
+           'start_date' => '2023-01-01',
+           'end_date'   => '2023-01-01',
            'type'       => 'based'
         ]);
 

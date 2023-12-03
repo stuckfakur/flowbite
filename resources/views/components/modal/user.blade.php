@@ -137,25 +137,31 @@
                         </div>
                         <div class="bg-white shadow-lg rounded-lg p-4">
                             <div class="grid grid-cols-12 gap-6"
-                                 x-data = "{ show : false }"
-                                 x-on:open-formDay.window = " show = true "
-                                 x-on:close-formDay.window = " show = false ">
+                                 x-data="{ show : false }"
+                                 x-on:open-formDay.window=" show = true "
+                                 x-on:close-formDay.window=" show = false ">
                                 <div class="flex items-end col-span-6 md:col-span-6 sm:col-span-3">
                                             <span class="flex items-end">
-                                            <input wire:model="subscriber" @click="show = $event.target.checked; if(!$event.target.checked) { $wire.day_id = 0 }" id="bordered-checkbox-1" type="checkbox"
-                                                   value="true"
-                                                   name="bordered-checkbox"
-                                                   class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
-                                            <label for="bordered-checkbox-1"
-                                                   class="w-full ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">is
-                                                Subscriber?</label>
+                                            <input
+                                                @if($editForm)
+                                                    {{ \App\Models\User::find($this->idUser)->subscriber ? 'checked' : '' }}
+                                                @endif
+                                                @click="show = $event.target.checked; if(!$event.target.checked) { $wire.day_id = 8 }"
+                                                id="checked-checkbox" type="checkbox" value=""
+                                                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                                                <label for="checked-checkbox"
+                                                       class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                                                    is Subscribe?
+                                                </label>
                                             </span>
                                 </div>
+
                                 <div class="col-span-6 md:col-span-6 sm:col-span-3"
                                      id="formDay"
                                      x-data="{ label : 'day', placeholder: 'Type your '}"
                                      x-show="show"
-                                     style="display: none;">
+{{--                                     style="@if($editForm) {{ (\App\Models\User::find($this->idUser)->day_id == '8') ? 'display:block' : 'display:none' }} @endif;"--}}
+                                >
 
                                     <label for="day"
                                            x-text="label.charAt(0).toUpperCase() + label.slice(1)"
@@ -168,10 +174,10 @@
                                         <option value="0" disabled>Select Day Subscribe</option>
                                         @foreach(\App\Models\Day::whereBetween('id', [1,7])->get() as $day)
                                             @php
-                                            if ($editForm){
-                                                $oldDayId = old('day_id', ($this->idUser ? \App\Models\User::find($this->idUser)->day_id : ''));
-                                                $isSelected = ($oldDayId == $day->id);
-                                            }
+                                                if ($editForm){
+                                                    $oldDayId = old('day_id', ($this->idUser ? \App\Models\User::find($this->idUser)->day_id : ''));
+                                                    $isSelected = ($oldDayId == $day->id);
+                                                }
                                             @endphp
 
                                             <option

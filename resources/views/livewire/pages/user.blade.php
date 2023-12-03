@@ -9,7 +9,7 @@ new class extends Component
 
     public $search;
     public $idUser;
-    public $email, $password, $name, $street, $phone, $regency_id, $notes, $subscriber, $day_id;
+    public $email, $password, $name, $street, $phone, $regency_id, $notes, $subscriber = false, $day_id;
     public $editForm = false;
     public $titleForm;
 
@@ -59,8 +59,8 @@ new class extends Component
         $this->street = $this->user->street;
         $this->regency_id = $this->user->regency_id;
         $this->notes = $this->user->notes;
-        $this->subscriber = $this->user->subscriber;
         $this->day_id = $this->user->day_id;
+        $this->subscriber = $this->user->subscriber;
     }
     public function update()
     {
@@ -79,7 +79,6 @@ new class extends Component
         }else {
             unset($validatedData['regency_id']);
         }
-
 
         if ($this->password){
             $validatedData['password'] = Hash::make($this->password);
@@ -204,8 +203,8 @@ new class extends Component
                                     <p><b>{{ $user->regency->name }}, {{ $user->regency->city }}</b></p>
                                     <p>Telp : {{ $user->phone }}</p></td>
                                 <td class="align-top px-4 py-3">{{ $user->notes }}</td>
-                                <td class="align-top text-center font-bold px-4 py-3">{{ ($user->subscriber == '1') ? '√' : ''}}</td>
-                                <td class="align-top text-center px-4 py-3">{{ $user->name }}</td>
+                                <td class="align-top text-center font-bold px-4 py-3">{{ ($user->subscriber === 1) ? '√' : ''}}</td>
+                                <td class="align-top text-center px-4 py-3">{{ $user->day->name }}</td>
                                 <td class="align-top px-4 py-3">{{ $user->updated_at->format('d-m-Y H:i:s') }}</td>
                                 <td class="align-top px-4 py-3 flex items-center justify-end">
                                     <button

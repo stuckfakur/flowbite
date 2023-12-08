@@ -16,6 +16,7 @@
         "vite": "^4.0.0"
     },
     "dependencies": {
-        "flowbite-datepicker": "^1.2.4"
+        "flowbite-datepicker": "^1.2.4",
+        "pikaday": "^1.8.2"
     }
 }

@@ -14,12 +14,6 @@ return new class extends Migration
         Schema::create('ms_users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->text('street')->nullable();
-            $table->string('phone')->nullable();
-            $table->foreignId('regency_id');
-            $table->text('notes')->nullable();
-            $table->string('subscriber')->nullable();
-            $table->foreignId('day_id')->default('0');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');

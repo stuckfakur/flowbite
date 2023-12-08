@@ -9,7 +9,7 @@ new class extends Component
 
     public $search;
     public $idUser;
-    public $email, $password, $name, $street, $phone, $regency_id, $notes, $subscriber = false, $day_id;
+    public $email, $password, $name;
     public $editForm = false;
     public $titleForm;
 
@@ -17,7 +17,6 @@ new class extends Component
     {
         return [
             'users' => \App\Models\User::search($this->search)->orderBy('updated_at', 'desc')->Paginate(10),
-            'regencies' => \App\Models\Regency::orderBy('city', 'asc')->get()
         ];
     }
     public function getUserId($userId)
@@ -29,14 +28,8 @@ new class extends Component
     {
         $validatedData = $this->validate([
             'name'       => 'required|min:3',
-            'email'      => 'required|unique:users,email',
+            'email'      => 'required|unique:ms_users,email',
             'password'   => 'required|min:3',
-            'street'     => 'nullable',
-            'phone'      => 'nullable',
-            'regency_id' => 'required',
-            'notes'      => 'nullable',
-            'subscriber' => 'nullable',
-            'day_id'     => 'required',
 
         ]);
         $user = \App\Models\User::create($validatedData);
@@ -55,12 +48,6 @@ new class extends Component
         $this->user = \App\Models\User::where('id', $this->idUser)->first();
         $this->name = $this->user->name;
         $this->email = $this->user->email;
-        $this->phone = $this->user->phone;
-        $this->street = $this->user->street;
-        $this->regency_id = $this->user->regency_id;
-        $this->notes = $this->user->notes;
-        $this->day_id = $this->user->day_id;
-        $this->subscriber = $this->user->subscriber;
     }
     public function update()
     {
@@ -68,18 +55,7 @@ new class extends Component
             'name'       => 'required|min:3',
             'email'      => 'required',
             'password'   => 'nullable',
-            'street'     => 'nullable',
-            'phone'      => 'nullable',
-            'notes'      => 'nullable',
-            'subscriber' => 'nullable',
-            'day_id'     => 'required',
         ]);
-        if($this->regency_id){
-            $validatedData['regency_id'] = $this->regency_id;
-        }else {
-            unset($validatedData['regency_id']);
-        }
-
         if ($this->password){
             $validatedData['password'] = Hash::make($this->password);
         }else{
@@ -110,7 +86,7 @@ new class extends Component
 
 <div>
     <section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5">
-        <div class="mx-auto max-w-screen-xl px-4 lg:px-12">
+        <div class="mx-auto max-full px-1 lg:px-4">
             <!-- Start coding here -->
             <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
                 <div class="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0 md:space-x-4 p-4">
@@ -183,10 +159,7 @@ new class extends Component
                         <tr>
                             <th scope="col" class="px-4 py-3">No</th>
                             <th scope="col" class="px-4 py-3">Name</th>
-                            <th scope="col" class="px-4 py-3">Address & Phone</th>
-                            <th scope="col" class="px-4 py-3">Notes</th>
-                            <th scope="col" class="px-4 py-3">is Subscriber?</th>
-                            <th scope="col" class="px-4 py-3">Send at</th>
+                            <th scope="col" class="px-4 py-3">Email</th>
                             <th scope="col" class="px-4 py-3">Update at</th>
                             <th scope="col" class="px-4 py-3">
                                 <span class="sr-only">Actions</span>
@@ -198,13 +171,7 @@ new class extends Component
                             <tr class="border-b dark:border-gray-700 hover:bg-gray-200">
                                 <th scope="row" class="align-top px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">{{ $loop->index + $users->firstItem() }}</th>
                                 <td class="align-top px-4 py-3">{{ $user->name }}</td>
-                                <td class="align-top px-4 py-3">
-                                    <p>{{ $user->street }}</p>
-                                    <p><b>{{ $user->regency->name }}, {{ $user->regency->city }}</b></p>
-                                    <p>Telp : {{ $user->phone }}</p></td>
-                                <td class="align-top px-4 py-3">{{ $user->notes }}</td>
-                                <td class="align-top text-center font-bold px-4 py-3">{{ ($user->subscriber === 1) ? '√' : ''}}</td>
-                                <td class="align-top text-center px-4 py-3">{{ $user->day->name }}</td>
+                                <td class="align-top px-4 py-3">{{ $user->email }}</td>
                                 <td class="align-top px-4 py-3">{{ $user->updated_at->format('d-m-Y H:i:s') }}</td>
                                 <td class="align-top px-4 py-3 flex items-center justify-end">
                                     <button
@@ -234,7 +201,7 @@ new class extends Component
                                         </ul>
                                         <div class="py-1">
                                             <a
-                                                @click="$dispatch('opendelete-usermodal')"
+                                                @click="$dispatch('opendelete-modal')"
                                                 class="block py-2 px-4 bg-red-600 text-white hover:bg-red-800 dark:hover:bg-red-800 dark:hover:text-white"
                                                 type="button">
                                                 Delete
@@ -256,5 +223,6 @@ new class extends Component
     </section>
     <x-modal.user :editForm="$editForm"
                   :titleForm="$titleForm"/>
+    <x-modal.delete/>
 
 </div>

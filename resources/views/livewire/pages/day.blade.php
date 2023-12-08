@@ -1,6 +1,7 @@
 <?php
 
 use Livewire\Volt\Component;
+use Carbon\Carbon;
 
 new class extends Component
 {
@@ -12,11 +13,12 @@ new class extends Component
     public $name, $start_date, $end_date, $type, $slug;
     public $editForm = false;
     public $titleForm;
+    public $selectedDate;
 
     public function with(): array
     {
         return [
-            'days' => \App\Models\Day::search($this->search)->whereNotBetween('id', [1,7])->orderBy('end_date', 'desc')->Paginate(10),
+            'days' => \App\Models\Day::search($this->search)->whereNotBetween('id', [1,8])->orderBy('end_date', 'desc')->Paginate(10),
         ];
     }
     public function getUserId($dayId)
@@ -24,16 +26,21 @@ new class extends Component
         $this->idUser = $dayId;
     }
 
+
+    public function updatedSelectedDate()
+    {
+        $this->dispatch('dateSelected', $this->selectedDate);
+    }
+
     public function store()
     {
         $validatedData = $this->validate([
             'name'       => 'required|min:3',
-            'start_date' => 'nullable',
-            'end_date'   => 'nullable',
-            'type'       => 'nullable',
-            'slug'       => 'nullable',
-
+            'start_date' => 'nullable|date',
+            'end_date'   => 'nullable|date|after_or_equal:start_date'
         ]);
+
+        $validatedData['end_date'] = $this->selectedDate;
         $validatedData['slug'] = Str::slug($this->name . $this->start_date);
         $validatedData['type'] = 'order';
         $day = \App\Models\Day::create($validatedData);
@@ -49,22 +56,25 @@ new class extends Component
         $this->editForm = true;
         $this->titleForm = 'Edit Day';
         $this->actionForm = 'update';
-        $this->user = \App\Models\Day::where('id', $this->idDay)->first();
+        $this->user = \App\Models\Day::where('id', $this->idUser)->first();
         $this->name = $this->user->name;
         $this->email = $this->user->email;
     }
     public function update()
     {
         $validatedData = $this->validate([
-            'name'       => 'required',
-            'email'      => 'required',
+            'name'       => 'required|min:3',
+            'start_date' => 'nullable|date',
+            'end_date'   => 'nullable',
+            'type'       => 'nullable',
+            'slug'       => 'nullable',
         ]);
-        if ($this->password){
-            $validatedData['password'] = Hash::make($this->password);
-        }else{
-            unset($validatedData['password']);
+        if ($validatedData['start_date']) {
+            $validatedData['start_date'] = Carbon::createFromFormat('Y-m-d', $validatedData['start_date'])->format('Y-m-d');
         }
-        $day = \App\Models\Day::where('id', $this->idDay)->first();
+        $validatedData['slug'] = Str::slug($this->name . $this->start_date);
+        $validatedData['type'] = 'order';
+        $day = \App\Models\Day::where('id', $this->idUser)->first();
         $day->update($validatedData);
         $this->alert('success', 'Day edited successfully');
         $this->dispatch('close-modal');
@@ -73,7 +83,7 @@ new class extends Component
 
     public function delete()
     {
-        $day = \App\Models\Day::where('id', $this->idDay)->first();
+        $day = \App\Models\Day::where('id', $this->idUser)->first();
         $day->delete();
         $this->alert('success', 'Day deleted successfully');
         $this->dispatch('close-modal');
@@ -88,7 +98,7 @@ new class extends Component
 
 <div>
     <section class="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5">
-        <div class="mx-auto max-w-screen-xl px-4 lg:px-12">
+        <div class="mx-auto max-full px-1 lg:px-4">
             <!-- Start coding here -->
             <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
                 <div class="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0 md:space-x-4 p-4">
@@ -175,13 +185,21 @@ new class extends Component
                             <tr class="border-b dark:border-gray-700 hover:bg-gray-200">
                                 <th scope="row" class="align-top px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">{{ $loop->index + $days->firstItem() }}</th>
                                 <td class="align-top px-4 py-3">{{ $day->name }}</td>
-                                <td class="align-top px-4 py-3">{{ $day->start_date->format('d-m-Y') }}</td>
-                                <td class="align-top px-4 py-3">{{ $day->end_date->format('d-m-Y') }}</td>
+                                @if($day->start_date)
+                                    <td class="align-top px-4 py-3">{{ $day->start_date->format('d-m-Y') }}</td>
+                                @else
+                                    <td class="align-top px-4 py-3">-</td>
+                                @endif
+                                @if($day->end_date)
+                                    <td class="align-top px-4 py-3">{{ $day->end_date->format('d-m-Y') }}</td>
+                                @else
+                                    <td class="align-top px-4 py-3">-</td>
+                                @endif
                                 <td class="align-top px-4 py-3">{{ $day->slug }}</td>
                                 <td class="align-top px-4 py-3">{{ $day->updated_at->format('d-m-Y H:i:s') }}</td>
                                 <td class="align-top px-4 py-3 flex items-center justify-end">
                                     <button
-                                        wire:click="getDayId({{ $day->id }})"
+                                        wire:click="getUserId({{ $day->id }})"
                                         @click="$dispatch('openaction-usermodal{{ $day->id }}')"
                                         class="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
                                         type="button">

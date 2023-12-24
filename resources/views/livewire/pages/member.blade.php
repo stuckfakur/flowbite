@@ -1,7 +1,6 @@
 <?php
 
 use Livewire\Volt\Component;
-use Carbon\Carbon;
 
 new class extends Component
 {
@@ -10,40 +9,51 @@ new class extends Component
 
     public $search;
     public $idUser;
-    public $name, $start_date, $end_date, $type, $slug;
-    public $editForm = false;
+    public $name, $street, $phone, $regency_id, $notes, $subscriber = false, $day_id;
+    public $editForm = false, $updateForm = false;
+    public $openSelect = false;
     public $titleForm;
-    public $selectedDate;
+    public $dayOptions = [];
+    public $regencyOptions = [];
 
     public function with(): array
     {
         return [
-            'days' => \App\Models\Day::search($this->search)->whereNotBetween('id', [1,8])->orderBy('end_date', 'desc')->Paginate(10),
+            'members' => \App\Models\Member::search($this->search)->orderBy('updated_at', 'desc')->Paginate(10),
         ];
     }
-    public function getUserId($dayId)
+    public function mount()
     {
-        $this->idUser = $dayId;
+        $this->dayOptions = \App\Models\Day::whereBetween('id', [1,8])->orderBy('id')->get()->toArray();
+        $this->regencyOptions = \App\Models\Regency::orderBy('city')->orderBy('name')->get()->toArray();
+
+    }
+    public function getUserId($memberId)
+    {
+        $this->idUser = $memberId;
     }
 
-
-    public function updatedSelectedDate()
+    public function create()
     {
-        $this->dispatch('dateSelected', $this->selectedDate);
+        $this->openSelect = true;
     }
 
     public function store()
     {
+        $this->updateForm = true;
         $validatedData = $this->validate([
             'name'       => 'required|min:3',
-            'start_date' => 'nullable|date',
-            'end_date'   => 'nullable|date|after_or_equal:start_date'
+            'street'     => 'nullable',
+            'phone'      => 'nullable',
+            'regency_id' => 'required',
+            'notes'      => 'nullable',
+            'subscriber' => 'nullable',
+            'day_id'     => 'nullable',
+
         ]);
-        $validatedData['slug'] = Str::slug($this->name . $this->start_date);
-        $validatedData['type'] = 'order';
-        $day = \App\Models\Day::create($validatedData);
-        $this->reset();
-        $this->alert('success', 'Day created successfully');
+        $member = \App\Models\Member::create($validatedData);
+        $this->reset('name', 'phone', 'street', 'notes', 'subscriber', 'day_id');
+        $this->alert('success', 'Member created successfully');
         $this->dispatch('crud-modal');
         $this->dispatch('close-modal');
 
@@ -52,44 +62,53 @@ new class extends Component
     public function edit()
     {
         $this->editForm = true;
-        $this->titleForm = 'Edit Day';
-        $this->actionForm = 'update';
-        $this->user = \App\Models\Day::where('id', $this->idUser)->first();
-        $this->name = $this->user->name;
-        $this->start_date = $this->user->start_date->format('d-m-Y');
-        $this->end_date = $this->user->end_date->format('d-m-Y');
-        $this->email = $this->user->email;
+        $this->titleForm = 'Edit Member';
+        $this->updateForm = true;
+        $this->member = \App\Models\Member::where('id', $this->idUser)->first();
+        $this->name = $this->member->name;
+        $this->phone = $this->member->phone;
+        $this->street = $this->member->street;
+        $this->regency_id = $this->member->regency_id;
+        $this->notes = $this->member->notes;
+        $this->day_id = $this->member->day_id;
     }
     public function update()
     {
+        $this->updateForm = true;
         $validatedData = $this->validate([
             'name'       => 'required|min:3',
-            'start_date' => 'nullable|date',
-            'end_date'   => 'nullable|date',
-            'type'       => 'nullable',
-            'slug'       => 'nullable',
+            'street'     => 'nullable',
+            'phone'      => 'nullable',
+            'notes'      => 'nullable',
+            'subscriber' => 'nullable',
+            'day_id'     => 'required',
         ]);
+        if($this->regency_id){
+            $validatedData['regency_id'] = $this->regency_id;
+        }else {
+            unset($validatedData['regency_id']);
+        }
 
-        $validatedData['slug'] = Str::slug($this->name . $this->start_date);
-        $validatedData['type'] = 'order';
-        $day = \App\Models\Day::where('id', $this->idUser)->first();
-        $day->update($validatedData);
-        $this->alert('success', 'Day edited successfully');
+        $member = \App\Models\Member::where('id', $this->idUser)->first();
+        $member->update($validatedData);
+        $this->reset('name', 'phone', 'street', 'notes', 'subscriber');
+        $this->alert('success', 'User edited successfully');
         $this->dispatch('close-modal');
 
     }
 
     public function delete()
     {
-        $day = \App\Models\Day::where('id', $this->idUser)->first();
-        $day->delete();
-        $this->alert('success', 'Day deleted successfully');
+        $this->editForm = false;
+        $member = \App\Models\Member::where('id', $this->idUser)->first();
+        $member->delete();
+        $this->alert('success', 'User deleted successfully');
         $this->dispatch('close-modal');
     }
 
     public function close()
     {
-        $this->reset();
+        $this->reset('name', 'phone', 'street', 'notes', 'subscriber', 'day_id');
     }
 
 } ?>
@@ -114,7 +133,7 @@ new class extends Component
                         </form>
                     </div>
                     <div class="w-full md:w-auto flex flex-col md:flex-row space-y-2 md:space-y-0 items-stretch md:items-center justify-end md:space-x-3 flex-shrink-0">
-                        <button type="button" wire:click="$dispatch('opencreate-usermodal')" class="flex items-center justify-center text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-primary-600 dark:hover:bg-primary-700 focus:outline-none dark:focus:ring-primary-800">
+                        <button type="button" wire:click="create"  @click="$dispatch('opencreate-membermodal')" class="flex items-center justify-center text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-primary-600 dark:hover:bg-primary-700 focus:outline-none dark:focus:ring-primary-800">
                             <svg class="h-3.5 w-3.5 mr-2" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                 <path clip-rule="evenodd" fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" />
                             </svg>
@@ -169,9 +188,10 @@ new class extends Component
                         <tr>
                             <th scope="col" class="px-4 py-3">No</th>
                             <th scope="col" class="px-4 py-3">Name</th>
-                            <th scope="col" class="px-4 py-3">Start Date</th>
-                            <th scope="col" class="px-4 py-3">End Date</th>
-                            <th scope="col" class="px-4 py-3">Slug</th>
+                            <th scope="col" class="px-4 py-3">Address & Phone</th>
+                            <th scope="col" class="px-4 py-3">Notes</th>
+                            <th scope="col" class="px-4 py-3">is Subscriber?</th>
+                            <th scope="col" class="px-4 py-3">Send at</th>
                             <th scope="col" class="px-4 py-3">Update at</th>
                             <th scope="col" class="px-4 py-3">
                                 <span class="sr-only">Actions</span>
@@ -179,26 +199,22 @@ new class extends Component
                         </tr>
                         </thead>
                         <tbody>
-                        @foreach($days as $day)
+                        @foreach($members as $member)
                             <tr class="border-b dark:border-gray-700 hover:bg-gray-200">
-                                <th scope="row" class="align-top px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">{{ $loop->index + $days->firstItem() }}</th>
-                                <td class="align-top px-4 py-3">{{ $day->name }}</td>
-                                @if($day->start_date)
-                                    <td class="align-top px-4 py-3">{{ $day->start_date->format('d-m-Y') }}</td>
-                                @else
-                                    <td class="align-top px-4 py-3">-</td>
-                                @endif
-                                @if($day->end_date)
-                                    <td class="align-top px-4 py-3">{{ $day->end_date->format('d-m-Y') }}</td>
-                                @else
-                                    <td class="align-top px-4 py-3">-</td>
-                                @endif
-                                <td class="align-top px-4 py-3">{{ $day->slug }}</td>
-                                <td class="align-top px-4 py-3">{{ $day->updated_at->format('d-m-Y H:i:s') }}</td>
+                                <th scope="row" class="align-top px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">{{ $loop->index + $members->firstItem() }}</th>
+                                <td class="align-top px-4 py-3">{{ $member->name }}</td>
+                                <td class="align-top px-4 py-3">
+                                    <p>{{ $member->street }}</p>
+                                    <p><b>{{ $member->regency->name }}, {{ $member->regency->city }}</b></p>
+                                    <p>Telp : {{ $member->phone }}</p></td>
+                                <td class="align-top px-4 py-3">{{ $member->notes }}</td>
+                                <td class="align-top text-center font-bold px-4 py-3">{{ ($member->subscriber === 1) ? '√' : ''}}</td>
+                                <td class="align-top text-center px-4 py-3">{{ $member->day->name }}</td>
+                                <td class="align-top px-4 py-3">{{ $member->updated_at->format('d-m-Y H:i:s') }}</td>
                                 <td class="align-top px-4 py-3 flex items-center justify-end">
                                     <button
-                                        wire:click="getUserId({{ $day->id }})"
-                                        @click="$dispatch('openaction-usermodal{{ $day->id }}')"
+                                        wire:click="getUserId({{ $member->id }})"
+                                        @click="$dispatch('openaction-membermodal{{ $member->id }}')"
                                         class="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
                                         type="button">
                                         <svg class="w-5 h-5" aria-hidden="true" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -208,7 +224,7 @@ new class extends Component
                                     <div
                                         x-data = "{ show : false }"
                                         x-show = "show"
-                                        x-on:openaction-usermodal{{ $day->id }}.window = "show = true"
+                                        x-on:openaction-membermodal{{ $member->id }}.window = "show = true"
                                         x-on:close-modal.window = "show = false"
                                         {{--                                        @mouseleave="show = false"--}}
                                         @click.outside=" show = false"
@@ -218,12 +234,8 @@ new class extends Component
                                         <ul class="py-1 text-sm text-gray-700 dark:text-gray-200" >
 
                                             <li>
-                                                <a href="/view-order/{{ $day->slug }}" type="button" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">View</a>
+                                                <a wire:click="edit" @click="$dispatch('opencreate-membermodal')" type="button" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Edit</a>
                                             </li>
-                                            <li>
-                                                <a wire:click="edit" @click="$dispatch('opencreate-usermodal')" type="button" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Edit</a>
-                                            </li>
-
                                         </ul>
                                         <div class="py-1">
                                             <a
@@ -242,13 +254,19 @@ new class extends Component
                     </table>
                 </div>
                 <nav class="space-y-3 md:space-y-0 p-4" aria-label="Table navigation">
-                    {{ $days->links() }}
+                    {{ $members->links() }}
                 </nav>
             </div>
         </div>
     </section>
-    <x-modal.day :editForm="$editForm"
+    <x-modal.member
+                  :openSelect="$openSelect"
+                  :dayOptions="$dayOptions"
+                  :regencyOptions="$regencyOptions"
+                  :editForm="$editForm"
+                  :updateForm="$updateForm"
                   :titleForm="$titleForm"/>
     <x-modal.delete/>
 
 </div>
+

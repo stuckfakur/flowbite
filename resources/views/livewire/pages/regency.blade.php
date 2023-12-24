@@ -192,7 +192,7 @@ new class extends Component
                                         </ul>
                                         <div class="py-1">
                                             <a
-                                                @click="$dispatch('opendelete-usermodal')"
+                                                @click="$dispatch('opendelete-modal')"
                                                 class="block py-2 px-4 bg-red-600 text-white hover:bg-red-800 dark:hover:bg-red-800 dark:hover:text-white"
                                                 type="button">
                                                 Delete
@@ -214,5 +214,6 @@ new class extends Component
     </section>
     <x-modal.regency :editForm="$editForm"
                     :titleForm="$titleForm"/>
+    <x-modal.delete/>
 
 </div>

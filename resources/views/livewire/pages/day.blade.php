@@ -39,8 +39,6 @@ new class extends Component
             'start_date' => 'nullable|date',
             'end_date'   => 'nullable|date|after_or_equal:start_date'
         ]);
-
-        $validatedData['end_date'] = $this->selectedDate;
         $validatedData['slug'] = Str::slug($this->name . $this->start_date);
         $validatedData['type'] = 'order';
         $day = \App\Models\Day::create($validatedData);
@@ -58,6 +56,8 @@ new class extends Component
         $this->actionForm = 'update';
         $this->user = \App\Models\Day::where('id', $this->idUser)->first();
         $this->name = $this->user->name;
+        $this->start_date = $this->user->start_date->format('d-m-Y');
+        $this->end_date = $this->user->end_date->format('d-m-Y');
         $this->email = $this->user->email;
     }
     public function update()
@@ -65,13 +65,11 @@ new class extends Component
         $validatedData = $this->validate([
             'name'       => 'required|min:3',
             'start_date' => 'nullable|date',
-            'end_date'   => 'nullable',
+            'end_date'   => 'nullable|date',
             'type'       => 'nullable',
             'slug'       => 'nullable',
         ]);
-        if ($validatedData['start_date']) {
-            $validatedData['start_date'] = Carbon::createFromFormat('Y-m-d', $validatedData['start_date'])->format('Y-m-d');
-        }
+
         $validatedData['slug'] = Str::slug($this->name . $this->start_date);
         $validatedData['type'] = 'order';
         $day = \App\Models\Day::where('id', $this->idUser)->first();
@@ -220,12 +218,16 @@ new class extends Component
                                         <ul class="py-1 text-sm text-gray-700 dark:text-gray-200" >
 
                                             <li>
+                                                <a href="/view-order/{{ $day->slug }}" type="button" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">View</a>
+                                            </li>
+                                            <li>
                                                 <a wire:click="edit" @click="$dispatch('opencreate-usermodal')" type="button" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Edit</a>
                                             </li>
+
                                         </ul>
                                         <div class="py-1">
                                             <a
-                                                @click="$dispatch('opendelete-usermodal')"
+                                                @click="$dispatch('opendelete-modal')"
                                                 class="block py-2 px-4 bg-red-600 text-white hover:bg-red-800 dark:hover:bg-red-800 dark:hover:text-white"
                                                 type="button">
                                                 Delete
@@ -247,5 +249,6 @@ new class extends Component
     </section>
     <x-modal.day :editForm="$editForm"
                   :titleForm="$titleForm"/>
+    <x-modal.delete/>
 
 </div>
